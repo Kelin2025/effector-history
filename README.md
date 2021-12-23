@@ -77,3 +77,8 @@ history.redo()     // Redo
 history.clear()    // Clear history
 history.push(data) // Manually push something to history
 ```
+
+## TODO
+- [ ] Store clocks that caused history push
+- [ ] Suppport different shapes of `source` in `createHistory`
+- [ ] Support `createHistory` without `source`
