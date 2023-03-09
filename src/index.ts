@@ -1,6 +1,7 @@
 import { createEvent, createStore, combine, sample, Store, Unit } from "effector";
 
 export type HistoryStrategy = {};
+export type HistoryStrategiesMap = Map<Unit<any>, HistoryStrategy>;
 
 const initialTrigger = createEvent();
 const unknownTrigger = createEvent();
@@ -9,7 +10,7 @@ const manualTrigger = createEvent();
 export const createHistory = <T extends Record<string, any> | unknown[]>(params: {
   source: T extends unknown[] ? Store<T[keyof T]>[] : { [k in keyof T]: Store<T[k]> };
   clock?: Unit<any>[];
-  strategies?: Map<Unit<any>, HistoryStrategy>;
+  strategies?: HistoryStrategiesMap;
   maxLength?: number;
   serialize?: "ignore";
 }) => {
