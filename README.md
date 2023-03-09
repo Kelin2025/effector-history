@@ -115,7 +115,7 @@ Built-in strategies:
 
 - `pushStrategy` (default) - always pushes to history, no matter what
 - `replaceRepetitiveStrategy` - if the current record came from the same trigger, the current record will be replaced. Otherwise, the new one will be pushed
-- `skipDuplicatesStrategy` - if the trigger & payload is the same, don't do anything. Push new record, if triggers are different. Replace current record otherwise
+- `skipDuplicatesStrategy` - if the trigger & payload are the same, don't do anything. Push new record, otherwise
 
 If you want to make a custom strategy, you can use `customStrategy` helper
 

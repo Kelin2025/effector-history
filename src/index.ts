@@ -244,17 +244,10 @@ export const pushStrategy: HistoryStrategy<any> = { check: () => "push" };
 export const replaceRepetitiveStrategy: HistoryStrategy<any> = {
   check: ({ trigger, curTrigger }) => (trigger === curTrigger ? "replace" : "push"),
 };
-/** If the trigger & payload is the same, ignores. Pushes new record, if triggers are different. Replaces record otherwise */
+/** If the trigger & payload are the same, don't do anything. Push new otherwise */
 export const skipDuplicatesStrategy: HistoryStrategy<any> = {
-  check: ({ trigger, curTrigger, payload, curPayload }) => {
-    if (trigger !== curTrigger) {
-      return "push";
-    }
-    if (payload !== curPayload) {
-      return "replace";
-    }
-    return "ignore";
-  },
+  check: ({ trigger, curTrigger, payload, curPayload }) =>
+    trigger === curTrigger && payload === curPayload ? "push" : "ignore",
 };
 /** Pass custom checker */
 export const customStrategy = <T>(config: HistoryStrategy<T>) => config;
