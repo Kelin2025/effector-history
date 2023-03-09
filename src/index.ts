@@ -247,7 +247,7 @@ export const replaceRepetitiveStrategy: HistoryStrategy<any> = {
 /** If the trigger & payload are the same, don't do anything. Push new otherwise */
 export const skipDuplicatesStrategy: HistoryStrategy<any> = {
   check: ({ trigger, curTrigger, payload, curPayload }) =>
-    trigger === curTrigger && payload === curPayload ? "push" : "ignore",
+    trigger === curTrigger && payload === curPayload ? "ignore" : "push",
 };
 /** Pass custom checker */
 export const customStrategy = <T>(config: HistoryStrategy<T>) => config;
