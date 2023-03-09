@@ -143,6 +143,29 @@ describe("Basic", () => {
       bar: 2,
     });
   });
+
+  it("Clear", async ({ scope }) => {
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo2",
+    });
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo3",
+    });
+
+    await allSettled(history.clear, { scope });
+
+    expect(scope.getState(history.$history)).toEqual([{ foo: "foo3", bar: 2 }]);
+    expect(scope.getState(history.$length)).toEqual(1);
+    expect(scope.getState(history.$curIndex)).toEqual(0);
+    expect(scope.getState(history.$canUndo)).toEqual(false);
+    expect(scope.getState(history.$canRedo)).toEqual(false);
+    expect(scope.getState(history.$actualState)).toEqual({
+      foo: "foo3",
+      bar: 2,
+    });
+  });
 });
 
 describe("Clock", () => {
