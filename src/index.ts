@@ -1,4 +1,13 @@
-import { createEvent, createStore, combine, sample, Store, Unit } from "effector";
+import {
+  createEvent,
+  createStore,
+  combine,
+  sample,
+  Store,
+  Unit,
+  createEffect,
+  EventPayload,
+} from "effector";
 
 export type HistoryStrategy<T> = {
   check: (params: {
@@ -163,8 +172,15 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   for (const trigger of Object.values(triggers)) {
     const strategy = strategies.get(trigger) ?? pushStrategy;
 
-    const triggered = sample({
+    const triggerFx = createEffect((payload: any) => payload);
+
+    sample({
       clock: trigger,
+      target: triggerFx,
+    });
+
+    const triggered = sample({
+      clock: triggerFx.doneData,
       source: {
         curTrigger: $curTrigger,
         curRecord: $curRecord,
@@ -198,6 +214,9 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
     }
   }
 
+  // State syncing
+  const finishSyncFx = createEffect(() => null);
+
   $shouldPush.on(undo, () => false).on(redo, () => false);
 
   const syncTriggered = sample({
@@ -210,13 +229,12 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
     params.source[key].on(syncTriggered, (_prev, obj) => obj[key]);
   }
 
-  $shouldPush.on(
-    sample({
-      source: $actualState,
-      clock: [undo, redo],
-    }),
-    () => true
-  );
+  sample({
+    clock: [undo, redo],
+    target: finishSyncFx,
+  });
+
+  $shouldPush.on(finishSyncFx.doneData, () => true);
 
   return {
     undo,
