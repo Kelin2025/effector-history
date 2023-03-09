@@ -252,7 +252,7 @@ export const skipDuplicatesStrategy: HistoryStrategy<any> = {
 /** Pass custom checker */
 export const customStrategy = <T>(config: HistoryStrategy<T>) => config;
 
-export const mergeStrategiesMaps = (maps: HistoryStrategiesMap[]) => {
+export const mergeStrategiesMaps = (maps: HistoryStrategiesMap[]): HistoryStrategiesMap => {
   // @ts-expect-error
   return new Map([...maps.map((map) => [...map]).flat()]);
 };
