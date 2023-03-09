@@ -1,6 +1,6 @@
 import { createEvent, createStore, combine, sample, Store, Unit } from "effector";
 
-type HistoryStrategy = {};
+export type HistoryStrategy = {};
 
 const initialTrigger = createEvent();
 const unknownTrigger = createEvent();
