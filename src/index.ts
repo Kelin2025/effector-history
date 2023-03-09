@@ -111,9 +111,14 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   $curIndex.on(redoPassed, (idx) => idx + 1);
 
   // Clear logic
-  $curIndex.on(clear, () => 0);
-  $history.on(clear, () => [initialState]);
-  $triggers.on(clear, () => [initialTrigger]);
+  const cleared = sample({
+    clock: clear,
+    source: $source,
+  });
+  $curIndex.on(cleared, () => 0);
+  // @ts-expect-error
+  $history.on(cleared, (prev, currentSource) => [currentSource]);
+  $triggers.on(cleared, () => [initialTrigger]);
 
   const $shouldPush = createStore(true);
 
