@@ -80,18 +80,36 @@ createHistory({
 
 ### Strategies
 
-Imagine that you have a custom editor with its own history logic. And you want to
+Imagine that you have a custom editor with its own history logic. And you want to treat typing in text field as a single history record.
 
 You can setup custom strategy for a certain `clock`
 
 ```ts
-import { replaceRepetitiveStrategy } from "effector-history";
+import { createHistory, replaceRepetitiveStrategy } from "effector-history";
 
-createHistory({
-  source: { text: $text, attachments: $attachments },
+const history = createHistory({
+  source: { 
+    text: $text, 
+    attachments: $attachments 
+  },
   clock: [textChanged, attachmentAdded, attachmentRemoved],
-  strategies: new Map().set(textChanged, replaceRepetitiveStrategy),
+  strategies: new Map()
+    .set(textChanged, replaceRepetitiveStrategy),
 });
+
+attachmentAdded(file)
+textChanged('f')
+textChanged('fo')
+textChanged('foo')
+
+history.$history.getState()
+/* 
+  [
+    { text: '', file: null },
+    { text: '', file: file },
+    { text: 'foo', file: file } // <- Batched in one
+  ]
+*/
 ```
 
 Currently available strategies:
