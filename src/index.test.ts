@@ -63,7 +63,7 @@ const historyWithCustom = createHistory({
   clock: [fooChanged, barChanged, bazInc],
   strategies: new Map().set(
     bazInc,
-    customStrategy({
+    customStrategy<number>({
       check: ({ trigger, curTrigger, payload, curPayload }) => {
         return trigger === curTrigger && payload === curPayload ? "replace" : "push";
       },

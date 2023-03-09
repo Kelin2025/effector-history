@@ -1,15 +1,15 @@
 import { createEvent, createStore, combine, sample, Store, Unit } from "effector";
 
-export type HistoryStrategy = {
+export type HistoryStrategy<T> = {
   check: (params: {
-    trigger: Unit<any>;
-    payload: any;
-    curTrigger: Unit<any>;
-    curPayload: any;
+    trigger: Unit<T>;
+    payload: T;
+    curTrigger: Unit<T>;
+    curPayload: T;
     curRecord: any;
   }) => "push" | "replace" | "ignore";
 };
-export type HistoryStrategiesMap = Map<Unit<any>, HistoryStrategy>;
+export type HistoryStrategiesMap = Map<Unit<any>, HistoryStrategy<any>>;
 
 const initialTrigger = createEvent();
 const unknownTrigger = createEvent();
@@ -239,10 +239,10 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
 };
 
 /** Always pushes new records */
-export const pushStrategy: HistoryStrategy = { check: () => "push" };
+export const pushStrategy: HistoryStrategy<any> = { check: () => "push" };
 /** Replace current record if it came from the same trigger. Push new otherwise */
-export const replaceRepetitiveStrategy: HistoryStrategy = {
+export const replaceRepetitiveStrategy: HistoryStrategy<any> = {
   check: ({ trigger, curTrigger }) => (trigger === curTrigger ? "replace" : "push"),
 };
 /** Pass custom checker */
-export const customStrategy = (config: HistoryStrategy) => config;
+export const customStrategy = <T>(config: HistoryStrategy<T>) => config;
