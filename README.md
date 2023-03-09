@@ -120,6 +120,8 @@ Built-in strategies:
 If you want to make a custom strategy, you can use `customStrategy` helper
 
 ```ts
+import { createHistory, customStrategy } from "effector-history";
+
 const buttonTextChanged = createEvent<{ idx: number; text: string }>();
 
 // List of parameters
@@ -150,6 +152,18 @@ const history = createHistory({
   clock: [buttonTextChanged],
   strategies: new Map().set(butonTextChanged, buttonTextChangedStrategy),
 });
+```
+
+If you want to merge multiple maps of strategies, you can use `mergeStrategiesMaps` helper:
+
+```ts
+import { pushStrategy, skipDuplicatesStrategy, mergeStrategiesMaps } from "effector-history";
+
+const textFieldStrategies = new Map().set(textFieldBlurred, skipDuplicatesStrategy);
+
+const buttonsStrategies = new Map().set(buttonAdded, pushStrategy).set(buttonRemoved, pushStrategy);
+
+const optionsStrategy = mergeStrategiesMaps([textFieldStrategies, buttonsStrategies]);
 ```
 
 ## API Reference
