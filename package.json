@@ -1,7 +1,20 @@
 {
-  "version": "0.1.2",
+  "name": "effector-history",
+  "version": "0.2.0-dev.0",
+  "author": "Anton Kosykh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kelin2025/effector-history"
+  },
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
@@ -11,36 +24,19 @@
     "node": ">=10"
   },
   "scripts": {
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build"
+    "build": "vite build",
+    "prepare": "npm run build",
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "peerDependencies": {
     "effector": "^22"
   },
   "devDependencies": {
-    "effector": "^22",
-    "tsdx": "^0.14.1"
-  },
-  "dependencies": {},
-  "husky": {
-    "hooks": {
-      "pre-commit": "tsdx lint"
-    }
-  },
-  "prettier": {
-    "printWidth": 80,
-    "semi": true,
-    "singleQuote": true,
-    "trailingComma": "es5"
-  },
-  "name": "effector-history",
-  "author": "Anton Kosykh",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kelin2025/effector-history"
-  },
-  "module": "dist/effector-history.esm.js"
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.4",
+    "vite-plugin-dts": "^2.1.0",
+    "vitest": "^0.29.2"
+  }
 }
