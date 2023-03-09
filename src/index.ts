@@ -1,6 +1,14 @@
 import { createEvent, createStore, combine, sample, Store, Unit } from "effector";
 
-export type HistoryStrategy = {};
+export type HistoryStrategy = {
+  check: (params: {
+    trigger: Unit<any>;
+    payload: any;
+    curTrigger: Unit<any>;
+    curPayload: any;
+    curRecord: any;
+  }) => "push" | "replace" | "ignore";
+};
 export type HistoryStrategiesMap = Map<Unit<any>, HistoryStrategy>;
 
 const initialTrigger = createEvent();
@@ -20,9 +28,16 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
 
   const undo = createEvent<any>();
   const redo = createEvent<any>();
-  const push = createEvent<{ record: T; trigger: Unit<any> }>();
-  const replace = createEvent<{ record: T; trigger: Unit<any> }>();
+  const push = createEvent<{ record: T; trigger: Unit<any>; payload: any }>();
+  const replace = createEvent<{ record: T; trigger: Unit<any>; payload: any }>();
+  const ignore = createEvent<{ record: T; trigger: Unit<any>; payload: any }>();
   const clear = createEvent<any>();
+
+  const historyActions = {
+    push,
+    replace,
+    ignore,
+  } as const;
 
   // @ts-expect-error
   const initialState: typeof params.source = Array.isArray(params.source) ? [] : {};
@@ -38,12 +53,20 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   const $triggers = createStore<Unit<any>[]>([initialTrigger], {
     serialize: "ignore",
   });
+  const $payloads = createStore<any[]>([null], {
+    serialize: "ignore",
+  });
   const $curIndex = createStore(0);
   const $curRecord = combine($history, $curIndex, (history, curIndex) => history[curIndex] || null);
   const $curTrigger = combine(
     $triggers,
     $curIndex,
     (triggers, curIndex) => triggers[curIndex] || unknownTrigger
+  );
+  const $curPayload = combine(
+    $payloads,
+    $curIndex,
+    (payloads, curIndex) => payloads[curIndex] ?? null
   );
   const $length = $history.map((history) => history.length);
   const $canUndo = $curIndex.map((idx) => idx > 0);
@@ -54,11 +77,12 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   const pushed = sample({
     source: [$curIndex, $history] as const,
     clock: push,
-    fn: ([curIndex, history], { record, trigger }) => {
+    fn: ([curIndex, history], { record, trigger, payload }) => {
       return {
         curIndex,
         record,
         trigger,
+        payload,
         shouldPop: history.length >= maxLength,
       };
     },
@@ -77,6 +101,15 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   $triggers.on(pushed, (prev, { curIndex, trigger, shouldPop }) => {
     const next = prev.slice(0, curIndex + 1);
     next.push(trigger);
+    if (shouldPop) {
+      next.pop();
+    }
+    return next;
+  });
+
+  $payloads.on(pushed, (prev, { curIndex, payload, shouldPop }) => {
+    const next = prev.slice(0, curIndex + 1);
+    next.push(payload);
     if (shouldPop) {
       next.pop();
     }
@@ -112,14 +145,15 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   $curIndex.on(redoPassed, (idx) => idx + 1);
 
   // Clear logic
-  const cleared = sample({
+  const clearPassed = sample({
     clock: clear,
     source: $source,
   });
-  $curIndex.on(cleared, () => 0);
+  $curIndex.on(clearPassed, () => 0);
   // @ts-expect-error
-  $history.on(cleared, (prev, currentSource) => [currentSource]);
-  $triggers.on(cleared, () => [initialTrigger]);
+  $history.on(clearPassed, (prev, currentSource) => [currentSource]);
+  $triggers.on(clearPassed, () => [initialTrigger]);
+  $payloads.on(clearPassed, () => [null]);
 
   const $shouldPush = createStore(true);
 
@@ -128,32 +162,39 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
 
   for (const trigger of Object.values(triggers)) {
     const strategy = strategies.get(trigger) ?? pushStrategy;
-    switch (strategy) {
-      case replaceRepetitiveStrategy:
-        sample({
-          clock: trigger,
-          source: [$curTrigger, $source] as const,
-          filter: ([curTrigger]) => trigger === curTrigger,
-          fn: ([_, record]) => ({ record, trigger }),
-          target: replace,
-        });
 
-        sample({
-          clock: trigger,
-          source: [$curTrigger, $source] as const,
-          filter: ([curTrigger]) => trigger !== curTrigger,
-          fn: ([_, record]) => ({ record, trigger }),
-          target: push,
-        });
-        break;
-      default:
-        sample({
-          clock: trigger,
-          source: $source,
-          filter: $shouldPush,
-          fn: (record) => ({ record, trigger }),
-          target: push,
-        });
+    const triggered = sample({
+      clock: trigger,
+      source: {
+        curTrigger: $curTrigger,
+        curRecord: $curRecord,
+        curPayload: $curPayload,
+        source: $source,
+      },
+      filter: $shouldPush,
+      fn: ({ curTrigger, curRecord, curPayload, source }, payload) => {
+        return {
+          record: source,
+          trigger,
+          payload,
+          target: strategy.check({
+            trigger,
+            payload,
+            curTrigger,
+            curRecord,
+            curPayload,
+          }),
+        };
+      },
+    });
+
+    for (const actionKey in historyActions) {
+      sample({
+        clock: triggered,
+        filter: ({ target }) => target === actionKey,
+        // @ts-expect-error
+        target: historyActions[actionKey],
+      });
     }
   }
 
@@ -180,10 +221,11 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
   return {
     undo,
     redo,
-    push: push.prepend((record: T) => ({ record, trigger: manualTrigger })),
+    push: push.prepend((record: T) => ({ record, trigger: manualTrigger, payload: null })),
     replace: replace.prepend((record: T) => ({
       record,
       trigger: manualTrigger,
+      payload: null,
     })),
     clear,
     $history,
@@ -197,6 +239,10 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
 };
 
 /** Always pushes new records */
-export const pushStrategy: HistoryStrategy = {};
+export const pushStrategy: HistoryStrategy = { check: () => "push" };
 /** Replace current record if it came from the same trigger. Push new otherwise */
-export const replaceRepetitiveStrategy: HistoryStrategy = {};
+export const replaceRepetitiveStrategy: HistoryStrategy = {
+  check: ({ trigger, curTrigger }) => (trigger === curTrigger ? "replace" : "push"),
+};
+/** Pass custom checker */
+export const customStrategy = (config: HistoryStrategy) => config;

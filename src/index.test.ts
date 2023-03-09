@@ -1,13 +1,15 @@
 import { allSettled, createEvent, createStore, fork, sample } from "effector";
 import { it, describe, expect, beforeEach } from "vitest";
 
-import { createHistory, replaceRepetitiveStrategy } from "./index";
+import { createHistory, customStrategy, replaceRepetitiveStrategy } from "./index";
 
 const $foo = createStore("foo");
 const $bar = createStore(2);
+const $baz = createStore([0, 0, 0]);
 
 const fooChanged = createEvent<string>();
 const barChanged = createEvent<number>();
+const bazInc = createEvent<number>();
 
 sample({
   clock: fooChanged,
@@ -17,6 +19,17 @@ sample({
 sample({
   clock: barChanged,
   target: $bar,
+});
+
+sample({
+  clock: bazInc,
+  source: $baz,
+  fn: (prev, idx) => {
+    const next = [...prev];
+    next[idx]++;
+    return next;
+  },
+  target: $baz,
 });
 
 const history = createHistory({
@@ -41,6 +54,21 @@ const historyWithStrategies = createHistory({
   },
   clock: [fooChanged, barChanged],
   strategies: new Map().set(fooChanged, replaceRepetitiveStrategy),
+});
+
+const historyWithCustom = createHistory({
+  source: {
+    baz: $baz,
+  },
+  clock: [fooChanged, barChanged, bazInc],
+  strategies: new Map().set(
+    bazInc,
+    customStrategy({
+      check: ({ trigger, curTrigger, payload, curPayload }) => {
+        return trigger === curTrigger && payload === curPayload ? "replace" : "push";
+      },
+    })
+  ),
 });
 
 beforeEach(async (context) => {
@@ -229,6 +257,41 @@ describe("Strategies", () => {
     expect(scope.getState(historyWithStrategies.$actualState)).toEqual({
       foo: "foo4",
       bar: 4,
+    });
+  });
+
+  it("Custom strategy", async ({ scope }) => {
+    await allSettled(bazInc, {
+      scope,
+      params: 0,
+    });
+    await allSettled(bazInc, {
+      scope,
+      params: 0,
+    });
+    await allSettled(bazInc, {
+      scope,
+      params: 1,
+    });
+    await allSettled(bazInc, {
+      scope,
+      params: 2,
+    });
+    await allSettled(bazInc, {
+      scope,
+      params: 0,
+    });
+
+    expect(scope.getState(historyWithCustom.$history)).toEqual([
+      { baz: [0, 0, 0] },
+      { baz: [2, 0, 0] },
+      { baz: [2, 1, 0] },
+      { baz: [2, 1, 1] },
+      { baz: [3, 1, 1] },
+    ]);
+    expect(scope.getState(historyWithCustom.$length)).toEqual(5);
+    expect(scope.getState(historyWithCustom.$actualState)).toEqual({
+      baz: [3, 1, 1],
     });
   });
 });

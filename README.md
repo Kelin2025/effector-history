@@ -88,21 +88,20 @@ You can setup custom strategy for a certain `clock`
 import { createHistory, replaceRepetitiveStrategy } from "effector-history";
 
 const history = createHistory({
-  source: { 
-    text: $text, 
-    attachments: $attachments 
+  source: {
+    text: $text,
+    attachments: $attachments,
   },
   clock: [textChanged, attachmentAdded, attachmentRemoved],
-  strategies: new Map()
-    .set(textChanged, replaceRepetitiveStrategy),
+  strategies: new Map().set(textChanged, replaceRepetitiveStrategy),
 });
 
-attachmentAdded(file)
-textChanged('f')
-textChanged('fo')
-textChanged('foo')
+attachmentAdded(file);
+textChanged("f");
+textChanged("fo");
+textChanged("foo");
 
-history.$history.getState()
+history.$history.getState();
 /* 
   [
     { text: '', file: null },
@@ -112,10 +111,41 @@ history.$history.getState()
 */
 ```
 
-Currently available strategies:
+Built-in strategies:
 
 - `pushStrategy` (default) - always pushes to history, no matter what
 - `replaceRepetitiveStrategy` - if the current record came from the same trigger, the current record will be replaced. Otherwise, the new one will be pushed
+
+If you want to make a custom strategy, you can use `customStrategy` helper
+
+```ts
+const buttonTextChanged = createEvent<{ idx: number; text: string }>();
+
+// List of parameters
+// trigger - Unit that caused history trigger
+// payload - Payload of `trigger`
+// curTrigger - Unit that caused currently active history record
+// curPayload - Payload of `curTrigger`
+// curRecord - Currently active history record
+const buttonTextChangedStrategy = customStrategy(({ trigger, curTrigger, payload, curPayload }) => {
+  if (trigger !== curTrigger) {
+    return "push";
+  }
+  if (payload.idx !== curPayload.idx) {
+    return "push";
+  }
+  return "replace";
+  return trigger === curTrigger && payload.idx === curPayload.idx ? "replace" : "push";
+});
+
+const history = createHistory({
+  source: {
+    buttons: $buttons,
+  },
+  clock: [buttonTextChanged],
+  strategies: new Map().set(butonTextChanged, buttonTextChangedStrategy),
+});
+```
 
 ## API Reference
 
