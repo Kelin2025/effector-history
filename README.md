@@ -128,14 +128,16 @@ const buttonTextChanged = createEvent<{ idx: number; text: string }>();
 // curPayload - Payload of `curTrigger`
 // curRecord - Currently active history record
 const buttonTextChangedStrategy = customStrategy(({ trigger, curTrigger, payload, curPayload }) => {
+  // If trigger is different, push a new record
   if (trigger !== curTrigger) {
     return "push";
   }
+  // If changing different button, push a new record
   if (payload.idx !== curPayload.idx) {
     return "push";
   }
+  // Otherwise replace the current one
   return "replace";
-  return trigger === curTrigger && payload.idx === curPayload.idx ? "replace" : "push";
 });
 
 const history = createHistory({
