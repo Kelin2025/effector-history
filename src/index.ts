@@ -4,8 +4,8 @@ export type HistoryStrategy<T> = {
   check: (params: {
     trigger: Unit<T>;
     payload: T;
-    curTrigger: Unit<T>;
-    curPayload: T;
+    curTrigger: Unit<any>;
+    curPayload: any;
     curRecord: any;
   }) => "push" | "replace" | "ignore";
 };
