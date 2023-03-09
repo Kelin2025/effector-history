@@ -15,7 +15,7 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
 }) => {
   const $source = combine(params.source) as Store<T>;
   const strategies = params.strategies || new Map();
-  const maxLength = params.maxLength || 20;
+  const maxLength = params.maxLength || Infinity;
 
   const undo = createEvent<any>();
   const redo = createEvent<any>();
