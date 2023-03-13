@@ -39,6 +39,14 @@ const history = createHistory({
   },
 });
 
+const historyWithMaxLength = createHistory({
+  source: {
+    foo: $foo,
+    bar: $bar,
+  },
+  maxLength: 5,
+});
+
 const historyWithClock = createHistory({
   source: {
     foo: $foo,
@@ -193,6 +201,43 @@ describe("Basic", () => {
       foo: "foo3",
       bar: 2,
     });
+  });
+
+  it("maxLength", async ({ scope }) => {
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo2",
+    });
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo3",
+    });
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo4",
+    });
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo5",
+    });
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo6",
+    });
+    await allSettled(fooChanged, {
+      scope,
+      params: "foo7",
+    });
+
+    expect(scope.getState(historyWithMaxLength.$history)).toEqual([
+      { foo: "foo3", bar: 2 },
+      { foo: "foo4", bar: 2 },
+      { foo: "foo5", bar: 2 },
+      { foo: "foo6", bar: 2 },
+      { foo: "foo7", bar: 2 },
+    ]);
+    expect(scope.getState(historyWithMaxLength.$length)).toEqual(5);
+    expect(scope.getState(historyWithMaxLength.$curIndex)).toEqual(4);
   });
 });
 
