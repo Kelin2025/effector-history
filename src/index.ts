@@ -92,40 +92,40 @@ export const createHistory = <T extends Record<string, any> | unknown[]>(params:
         record,
         trigger,
         payload,
-        shouldPop: history.length >= maxLength,
+        shouldShift: history.length >= maxLength,
       };
     },
   });
 
-  $history.on(pushed, (prev, { curIndex, record, shouldPop }) => {
+  $history.on(pushed, (prev, { curIndex, record, shouldShift }) => {
     const next = prev.slice(0, curIndex + 1);
     // @ts-expect-error
     next.push(record);
-    if (shouldPop) {
-      next.pop();
+    if (shouldShift) {
+      next.shift();
     }
     return next;
   });
 
-  $triggers.on(pushed, (prev, { curIndex, trigger, shouldPop }) => {
+  $triggers.on(pushed, (prev, { curIndex, trigger, shouldShift }) => {
     const next = prev.slice(0, curIndex + 1);
     next.push(trigger);
-    if (shouldPop) {
-      next.pop();
+    if (shouldShift) {
+      next.shift();
     }
     return next;
   });
 
-  $payloads.on(pushed, (prev, { curIndex, payload, shouldPop }) => {
+  $payloads.on(pushed, (prev, { curIndex, payload, shouldShift }) => {
     const next = prev.slice(0, curIndex + 1);
     next.push(payload);
-    if (shouldPop) {
-      next.pop();
+    if (shouldShift) {
+      next.shift();
     }
     return next;
   });
 
-  $curIndex.on(pushed, (curIndex, { shouldPop }) => (shouldPop ? curIndex : curIndex + 1));
+  $curIndex.on(pushed, (curIndex, { shouldShift }) => (shouldShift ? curIndex : curIndex + 1));
 
   // Replace logic
   $history.on(replace, (prev, { record }) => {
