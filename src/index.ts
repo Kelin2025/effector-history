@@ -1,13 +1,4 @@
-import {
-  createEvent,
-  createStore,
-  combine,
-  sample,
-  Store,
-  Unit,
-  createEffect,
-  EventPayload,
-} from "effector";
+import { createEvent, createStore, combine, sample, Store, Unit, createEffect } from "effector";
 
 export type HistoryStrategy<T> = {
   check: (params: {
